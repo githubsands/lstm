@@ -19,3 +19,4 @@ features
 * transaction windowed aggregations
 * transaction batch writes
 * client acknowledgements that transactions have been succesfully flushed to disk
+* recovered windows replay / recovery on startup per sequence batch
