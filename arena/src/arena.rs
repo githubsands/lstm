@@ -37,6 +37,7 @@ pub enum ArenaError {
 
 const ARENA_SIZE_BYTES: usize = 4096;
 
+#[repr(C)]
 struct RuntimeSizedByteArray<'a> {
     ptr: *mut u8,
     size: usize,
@@ -65,6 +66,7 @@ impl<'a> RuntimeSizedByteArray<'a> {
 unsafe impl<'a> Send for RuntimeSizedByteArray<'a> {}
 unsafe impl<'a> Sync for RuntimeSizedByteArray<'a> {}
 
+#[repr(C)]
 pub struct RuntimeSizedNode<'a> {
     pub key: &'a mut [u8; 32],
     pub val: RuntimeSizedByteArray<'a>,
@@ -93,6 +95,7 @@ impl<'a> RuntimeSizedNode<'a> {
 unsafe impl<'a> Send for RuntimeSizedNode<'a> {}
 unsafe impl<'a> Sync for RuntimeSizedNode<'a> {}
 
+#[repr(C)]
 pub struct Arena<'a> {
     data: NonNull<u8>,
     layout: Layout,
