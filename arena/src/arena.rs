@@ -140,22 +140,10 @@ impl<'a> Arena<'a> {
             return Err(ArenaError::OOM);
         }
 
-        self.memory_usage.fetch_add(total_size, Ordering::Relaxed);
+        self.memory_usage.fetch_add(total_size, Ordering::SeqCst);
 
         let slice = &mut self.as_slice_mut()[start..start + total_size];
         RuntimeSizedNode::new(slice, val_size).ok_or(ArenaError::Undefined)
-    }
-
-    pub fn allocate_slice(&'a self, size: usize) -> Result<&'a mut [u8], ArenaError> {
-        let start = self.current_index.fetch_add(size, Ordering::SeqCst);
-
-        if start + size > ARENA_SIZE_BYTES {
-            return Err(ArenaError::OOM);
-        }
-
-        self.memory_usage.fetch_add(size, Ordering::Relaxed);
-
-        Ok(&mut self.as_slice_mut()[start..start + size])
     }
 
     pub fn remaining_capacity(&self) -> usize {
