@@ -39,7 +39,7 @@ const ARENA_SIZE_BYTES: usize = 4096;
 
 #[repr(C)]
 struct RuntimeSizedByteArray<'a> {
-    ptr: *mut u8,
+    ptr: NonNull<u8>,
     size: usize,
     _marker: PhantomData<&'a mut [u8]>,
 }
@@ -48,8 +48,12 @@ impl<'a> RuntimeSizedByteArray<'a> {
     fn new(size: usize, bytes: &'a mut [u8]) -> Option<RuntimeSizedByteArray<'a>> {
         if bytes.len() == size {
             let ptr = bytes.as_mut_ptr();
+            let ptr = NonNull::new(ptr);
+            if ptr.is_none() {
+                panic!("failed to create runtime sized byte array");
+            }
             Some(RuntimeSizedByteArray {
-                ptr,
+                ptr: ptr.unwrap(),
                 size,
                 _marker: PhantomData,
             })
@@ -59,7 +63,7 @@ impl<'a> RuntimeSizedByteArray<'a> {
     }
 
     pub fn as_slice(&self) -> &[u8] {
-        unsafe { slice::from_raw_parts(self.ptr, self.size) }
+        unsafe { slice::from_raw_parts(self.ptr.as_ptr(), self.size) }
     }
 }
 
@@ -109,13 +113,12 @@ impl<'a> Arena<'a> {
         unsafe {
             let layout = Layout::from_size_align_unchecked(ARENA_SIZE_BYTES, 8);
             let ptr = alloc_zeroed(layout);
-
-            if ptr.is_null() {
-                panic!("allocation failed");
+            let data = NonNull::new(ptr);
+            if data.is_none() {
+                panic!("failed to create runtime sized byte array");
             }
-
             Arc::new(Arena {
-                data: NonNull::new_unchecked(ptr),
+                data: data.unwrap(),
                 layout,
                 current_index: AtomicUsize::new(0),
                 memory_usage: AtomicUsize::new(0),
